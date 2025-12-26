@@ -1,0 +1,38 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync Upstream
+        uses: aormsby/fork-sync-with-upstream-action@v3.4
+        with:
+          upstream_sync_repo: KuekHaoYang/KVideo
+          upstream_sync_branch: main
+          target_sync_branch: main
+          upstream_repo_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Telegram 通知
+        run: |
+          MESSAGE='✅ KVideo 仓库同步提醒
+          
+          GitHub Action 已执行 Fork 同步任务。
+          
+          仓库：wylangyue/KVideo
+          上游：KuekHaoYang/KVideo
+          
+          如上游存在更新，已自动同步到你的 Fork。'
+
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=${MESSAGE}"
