@@ -22,6 +22,7 @@ interface DesktopOverlayWrapperProps {
     onSpeedChange: (speed: number) => void;
     onSpeedMenuMouseEnter: () => void;
     onSpeedMenuMouseLeave: () => void;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DesktopOverlayWrapper({
@@ -42,7 +43,8 @@ export function DesktopOverlayWrapper({
     onToggleSpeedMenu,
     onSpeedChange,
     onSpeedMenuMouseEnter,
-    onSpeedMenuMouseLeave
+    onSpeedMenuMouseLeave,
+    containerRef
 }: DesktopOverlayWrapperProps) {
     const {
         isLoading,
@@ -86,6 +88,7 @@ export function DesktopOverlayWrapper({
             onSpeedChange={onSpeedChange}
             onSpeedMenuMouseEnter={onSpeedMenuMouseEnter}
             onSpeedMenuMouseLeave={onSpeedMenuMouseLeave}
+            containerRef={containerRef}
         />
     );
 }

@@ -147,6 +147,8 @@ export function DesktopVideoPlayer({
         onSpeedChange={logic.changePlaybackSpeed}
         onSpeedMenuMouseEnter={logic.clearSpeedMenuTimeout}
         onSpeedMenuMouseLeave={logic.startSpeedMenuTimeout}
+        // Portal container
+        containerRef={containerRef}
       />
 
       <DesktopControlsWrapper

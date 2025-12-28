@@ -9,6 +9,7 @@ interface DesktopSpeedMenuProps {
     onToggleSpeedMenu: () => void;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DesktopSpeedMenu({
@@ -18,27 +19,32 @@ export function DesktopSpeedMenu({
     onSpeedChange,
     onToggleSpeedMenu,
     onMouseEnter,
-    onMouseLeave
+    onMouseLeave,
+    containerRef
 }: DesktopSpeedMenuProps) {
     const buttonRef = React.useRef<HTMLButtonElement>(null);
     const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0 });
 
     React.useEffect(() => {
-        if (showSpeedMenu && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (showSpeedMenu && buttonRef.current && containerRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
             setMenuPosition({
-                top: rect.bottom + 10,
-                left: rect.right // Align with right edge
+                top: buttonRect.bottom - containerRect.top + 10,
+                left: buttonRect.right - containerRect.left
             });
         }
-    }, [showSpeedMenu]);
+    }, [showSpeedMenu, containerRef]);
 
     const handleToggle = () => {
-        if (!showSpeedMenu && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (!showSpeedMenu && buttonRef.current && containerRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
             setMenuPosition({
-                top: rect.bottom + 10,
-                left: rect.right // Align with right edge
+                top: buttonRect.bottom - containerRect.top + 10,
+                left: buttonRect.right - containerRect.left
             });
         }
         onToggleSpeedMenu();
@@ -47,7 +53,7 @@ export function DesktopSpeedMenu({
 
     const MenuContent = (
         <div
-            className="fixed z-[9999] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-2 min-w-[5rem]"
+            className="absolute z-[9999] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-1.5 w-fit min-w-[4.5rem]"
             style={{
                 top: menuPosition.top,
                 left: menuPosition.left,
@@ -60,7 +66,7 @@ export function DesktopSpeedMenu({
                 <button
                     key={speed}
                     onClick={() => onSpeedChange(speed)}
-                    className={`w-full px-3 py-2 rounded-[var(--radius-2xl)] text-sm font-medium transition-colors ${playbackRate === speed
+                    className={`w-full px-4 py-1.5 rounded-[var(--radius-2xl)] text-sm font-medium transition-colors ${playbackRate === speed
                         ? 'bg-[var(--accent-color)] text-white'
                         : 'text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)]'
                         }`}
@@ -85,7 +91,7 @@ export function DesktopSpeedMenu({
             </button>
 
             {/* Speed Menu (Portal) */}
-            {showSpeedMenu && typeof document !== 'undefined' && createPortal(MenuContent, document.body)}
+            {showSpeedMenu && typeof document !== 'undefined' && createPortal(MenuContent, containerRef.current || document.body)}
         </div>
     );
 }

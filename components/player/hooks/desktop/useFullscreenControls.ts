@@ -47,6 +47,15 @@ export function useFullscreenControls({
                     // Fallback for browsers that only support fullscreen on video element (like some car browsers)
                     (videoRef.current as any).webkitEnterFullscreen();
                 }
+
+                // Lock orientation to landscape on mobile devices if supported
+                if (window.screen && (window.screen as any).orientation && (window.screen as any).orientation.lock) {
+                    try {
+                        await (window.screen as any).orientation.lock('landscape');
+                    } catch (e) {
+                        console.warn('Orientation lock failed:', e);
+                    }
+                }
             } catch (error) {
                 console.warn('Fullscreen request failed, trying fallback:', error);
                 // Last ditch effort: try native video fullscreen if container failed
@@ -69,6 +78,15 @@ export function useFullscreenControls({
                 } else if ((document as any).msExitFullscreen) {
                     await (document as any).msExitFullscreen();
                 }
+
+                // Unlock orientation when exiting fullscreen
+                if (window.screen && (window.screen as any).orientation && (window.screen as any).orientation.unlock) {
+                    try {
+                        (window.screen as any).orientation.unlock();
+                    } catch (e) {
+                        console.warn('Orientation unlock failed:', e);
+                    }
+                }
             } catch (error) {
                 console.error('Failed to exit fullscreen:', error);
             }
@@ -84,6 +102,19 @@ export function useFullscreenControls({
                 (document as any).msFullscreenElement
             );
             setIsFullscreen(isInFullscreen);
+
+            // Double check orientation lock/unlock on change
+            if (isInFullscreen) {
+                if (window.screen && (window.screen as any).orientation && (window.screen as any).orientation.lock) {
+                    (window.screen as any).orientation.lock('landscape').catch(() => { });
+                }
+            } else {
+                if (window.screen && (window.screen as any).orientation && (window.screen as any).orientation.unlock) {
+                    try {
+                        (window.screen as any).orientation.unlock();
+                    } catch (e) { }
+                }
+            }
         };
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);

@@ -33,6 +33,7 @@ interface DesktopOverlayProps {
     onSpeedChange: (speed: number) => void;
     onSpeedMenuMouseEnter: () => void;
     onSpeedMenuMouseLeave: () => void;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DesktopOverlay({
@@ -62,7 +63,8 @@ export function DesktopOverlay({
     onToggleSpeedMenu,
     onSpeedChange,
     onSpeedMenuMouseEnter,
-    onSpeedMenuMouseLeave
+    onSpeedMenuMouseLeave,
+    containerRef
 }: DesktopOverlayProps) {
     // Show navigation buttons when controls are visible or when paused (controls usually show when paused anyway)
     const showNavButtons = showControls || !isPlaying;
@@ -70,7 +72,7 @@ export function DesktopOverlay({
     return (
         <>
             {/* More Menu (Top Left) */}
-            <div className={`absolute top-6 left-6 z-30 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ pointerEvents: showControls ? 'auto' : 'none' }}>
+            <div className={`absolute top-6 left-6 z-50 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ pointerEvents: showControls ? 'auto' : 'none' }}>
                 <DesktopMoreMenu
                     showMoreMenu={showMoreMenu}
                     isProxied={isProxied}
@@ -78,11 +80,12 @@ export function DesktopOverlay({
                     onMouseEnter={onMoreMenuMouseEnter}
                     onMouseLeave={onMoreMenuMouseLeave}
                     onCopyLink={onCopyLink}
+                    containerRef={containerRef}
                 />
             </div>
 
             {/* Speed Menu (Top Right) */}
-            <div className={`absolute top-6 right-6 z-30 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ pointerEvents: showControls ? 'auto' : 'none' }}>
+            <div className={`absolute top-6 right-6 z-50 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ pointerEvents: showControls ? 'auto' : 'none' }}>
                 <DesktopSpeedMenu
                     showSpeedMenu={showSpeedMenu}
                     playbackRate={playbackRate}
@@ -91,6 +94,7 @@ export function DesktopOverlay({
                     onToggleSpeedMenu={onToggleSpeedMenu}
                     onMouseEnter={onSpeedMenuMouseEnter}
                     onMouseLeave={onSpeedMenuMouseLeave}
+                    containerRef={containerRef}
                 />
             </div>
 

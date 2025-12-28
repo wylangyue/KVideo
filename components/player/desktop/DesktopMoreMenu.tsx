@@ -13,6 +13,7 @@ interface DesktopMoreMenuProps {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
     onCopyLink: (type?: 'original' | 'proxy') => void;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DesktopMoreMenu({
@@ -21,7 +22,8 @@ export function DesktopMoreMenu({
     onToggleMoreMenu,
     onMouseEnter,
     onMouseLeave,
-    onCopyLink
+    onCopyLink,
+    containerRef
 }: DesktopMoreMenuProps) {
     const {
         autoNextEpisode,
@@ -42,21 +44,25 @@ export function DesktopMoreMenu({
     const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0 });
 
     React.useEffect(() => {
-        if (showMoreMenu && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (showMoreMenu && buttonRef.current && containerRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
             setMenuPosition({
-                top: rect.bottom + 10, // 10px spacing
-                left: rect.left
+                top: buttonRect.bottom - containerRect.top + 10,
+                left: buttonRect.left - containerRect.left
             });
         }
-    }, [showMoreMenu]);
+    }, [showMoreMenu, containerRef]);
 
     const handleToggle = () => {
-        if (!showMoreMenu && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (!showMoreMenu && buttonRef.current && containerRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
             setMenuPosition({
-                top: rect.bottom + 10, // 10px spacing
-                left: rect.left
+                top: buttonRect.bottom - containerRect.top + 10,
+                left: buttonRect.left - containerRect.left
             });
         }
         onToggleMoreMenu();
@@ -64,7 +70,7 @@ export function DesktopMoreMenu({
 
     const MenuContent = (
         <div
-            className="fixed z-[9999] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-200"
+            className="absolute z-[9999] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-2 w-fit min-w-[220px] animate-in fade-in zoom-in-95 duration-200"
             style={{
                 top: menuPosition.top,
                 left: menuPosition.left,
@@ -237,7 +243,7 @@ export function DesktopMoreMenu({
             </button>
 
             {/* More Menu Dropdown (Portal) */}
-            {showMoreMenu && typeof document !== 'undefined' && createPortal(MenuContent, document.body)}
+            {showMoreMenu && typeof document !== 'undefined' && createPortal(MenuContent, containerRef.current || document.body)}
         </div>
     );
 }

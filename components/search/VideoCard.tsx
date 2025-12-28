@@ -10,6 +10,7 @@ import { LatencyBadge } from '@/components/ui/LatencyBadge';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 
 import { Video } from '@/lib/types';
+import { parseVideoTitle } from '@/lib/utils/video';
 
 interface VideoCardProps {
     video: Video;
@@ -53,7 +54,7 @@ export const VideoCard = memo<VideoCardProps>(({
                     }}
                 >
                     {/* Poster */}
-                    <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] rounded-[var(--radius-2xl)]">
+                    <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] rounded-[var(--radius-2xl)] overflow-hidden">
                         {video.vod_pic ? (
                             <Image
                                 src={video.vod_pic}
@@ -139,13 +140,31 @@ export const VideoCard = memo<VideoCardProps>(({
                     </div>
 
                     {/* Info */}
-                    <div className="pt-3">
-                        <h4 className="font-semibold text-sm text-[var(--text-color)] line-clamp-2">
-                            {video.vod_remarks && (
-                                <span className="text-xs text-[var(--accent-color)] mr-1">[{video.vod_remarks}]</span>
-                            )}
-                            {video.vod_name}
-                        </h4>
+                    <div className="p-3 flex-1 flex flex-col">
+                        {(() => {
+                            const { cleanTitle, quality } = parseVideoTitle(video.vod_name);
+                            // Visual priority: Quality from title tag, then vod_remarks
+                            const displayQuality = quality || video.vod_remarks;
+
+                            return (
+                                <>
+                                    <h4 className="font-semibold text-sm text-[var(--text-color)] line-clamp-2 min-h-[2.5rem] mb-1">
+                                        {cleanTitle}
+                                    </h4>
+                                    {displayQuality && (
+                                        <p className="text-xs text-[var(--text-color-secondary)] font-medium">
+                                            {displayQuality}
+                                        </p>
+                                    )}
+                                    {/* Hide remarks if it was used as quality to avoid duplication */}
+                                    {video.vod_remarks && video.vod_remarks !== displayQuality && (
+                                        <p className="text-xs text-[var(--text-color-secondary)] mt-1 line-clamp-1">
+                                            {video.vod_remarks}
+                                        </p>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </Card>
             </Link>
