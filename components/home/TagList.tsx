@@ -65,6 +65,27 @@ export function TagList({
         }
     }, [justAddedTag, onJustAddedTagHandled]);
 
+    // Handle horizontal scroll with mouse wheel
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            // Check if it's a vertical scroll (mostly deltaY) and negligible horizontal scroll
+            if (e.deltaY !== 0 && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+                e.preventDefault();
+                container.scrollLeft += e.deltaY;
+            }
+        };
+
+        // Add passive: false to allow preventDefault
+        container.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => {
+            container.removeEventListener('wheel', handleWheel);
+        };
+    }, []);
+
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
     };

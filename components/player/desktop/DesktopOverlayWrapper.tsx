@@ -3,7 +3,8 @@ import { DesktopOverlay } from './DesktopOverlay';
 import { useDesktopPlayerState } from '../hooks/useDesktopPlayerState';
 
 interface DesktopOverlayWrapperProps {
-    state: ReturnType<typeof useDesktopPlayerState>['state'];
+    data: ReturnType<typeof useDesktopPlayerState>['data'];
+    actions: ReturnType<typeof useDesktopPlayerState>['actions'];
     showControls: boolean;
     onTogglePlay: () => void;
     onSkipForward: () => void;
@@ -26,7 +27,8 @@ interface DesktopOverlayWrapperProps {
 }
 
 export function DesktopOverlayWrapper({
-    state,
+    data,
+    actions,
     showControls,
     onTogglePlay,
     onSkipForward,
@@ -44,7 +46,7 @@ export function DesktopOverlayWrapper({
     onSpeedChange,
     onSpeedMenuMouseEnter,
     onSpeedMenuMouseLeave,
-    containerRef
+    containerRef,
 }: DesktopOverlayWrapperProps) {
     const {
         isLoading,
@@ -57,7 +59,7 @@ export function DesktopOverlayWrapper({
         isSkipBackwardAnimatingOut,
         showToast,
         toastMessage,
-    } = state;
+    } = data;
 
     return (
         <DesktopOverlay
