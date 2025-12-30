@@ -43,7 +43,25 @@ export function useHomePage() {
     useEffect(() => {
         const updateSettings = () => {
             const settings = settingsStore.getSettings();
-            setCurrentSortBy(settings.sortBy);
+
+            // Update sort preference
+            if (settings.sortBy !== currentSortBy) {
+                setCurrentSortBy(settings.sortBy);
+            }
+
+            // Check if we need to re-trigger search due to new sources being loaded
+            // This fixes the issue where initial visit has 0 sources, then sources are loaded async
+            // but the search (or lack thereof) is already stuck with empty sources.
+            const enabledSources = settings.sources.filter(s => s.enabled);
+            const hasSources = enabledSources.length > 0;
+
+            // If we have a query, and we haven't searched effectively (or result count is 0),
+            // and we suddenly have sources, retry the search.
+            if (query && hasSources && (!hasSearched || results.length === 0) && !loading) {
+                // We simply call handleSearch again which pulls fresh sources from settingsStore
+                performSearch(query, enabledSources, settings.sortBy);
+                setHasSearched(true);
+            }
         };
 
         // Initial load
@@ -52,7 +70,7 @@ export function useHomePage() {
         // Subscribe to changes
         const unsubscribe = settingsStore.subscribe(updateSettings);
         return () => unsubscribe();
-    }, []);
+    }, [query, hasSearched, results.length, loading, performSearch, currentSortBy]);
 
     // Load cached results on mount
     useEffect(() => {
@@ -74,11 +92,20 @@ export function useHomePage() {
     }, [searchParams, loadFromCache, loadCachedResults]);
 
     const handleSearch = (searchQuery: string) => {
+        if (!searchQuery.trim()) return;
+
         setQuery(searchQuery);
         setHasSearched(true);
         const settings = settingsStore.getSettings();
         // Filter enabled sources
         const enabledSources = settings.sources.filter(s => s.enabled);
+
+        if (enabledSources.length === 0) {
+            // If no sources yet, we can't do much, but the subscription above will catch it 
+            // once sources are loaded by useSubscriptionSync
+            return;
+        }
+
         performSearch(searchQuery, enabledSources, currentSortBy as any);
     };
 
