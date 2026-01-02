@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Icons } from '@/components/ui/Icon';
+import { siteConfig } from '@/lib/config/site-config';
 
 interface NavbarProps {
     onReset: () => void;
@@ -29,15 +30,15 @@ export function Navbar({ onReset, isSecretMode = false }: NavbarProps) {
                             <div className="w-8 h-8 sm:w-10 sm:h-10 relative flex items-center justify-center flex-shrink-0">
                                 <Image
                                     src="/icon.png"
-                                    alt="KVideo"
+                                    alt={siteConfig.name}
                                     width={40}
                                     height={40}
                                     className="object-contain"
                                 />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <h1 className="text-lg sm:text-2xl font-bold text-[var(--text-color)] truncate">KVideo</h1>
-                                <p className="text-xs text-[var(--text-color-secondary)] hidden sm:block truncate">视频聚合平台</p>
+                                <h1 className="text-lg sm:text-2xl font-bold text-[var(--text-color)] truncate">{siteConfig.name}</h1>
+                                <p className="text-xs text-[var(--text-color-secondary)] hidden sm:block truncate">{siteConfig.description}</p>
                             </div>
                         </Link>
 
@@ -47,7 +48,7 @@ export function Navbar({ onReset, isSecretMode = false }: NavbarProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-[var(--radius-full)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_10%,transparent)] transition-all duration-200 cursor-pointer hidden sm:flex"
-                                aria-label="GitHub"
+                                aria-label="GitHub 仓库"
                             >
                                 <Icons.Github size={20} />
                             </a>

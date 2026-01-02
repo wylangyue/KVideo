@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Icons } from '@/components/ui/Icon';
+import { siteConfig } from '@/lib/config/site-config';
 
 export function PlayerNavbar() {
     const router = useRouter();
@@ -20,7 +21,7 @@ export function PlayerNavbar() {
                         >
                             <Image
                                 src="/icon.png"
-                                alt="KVideo"
+                                alt={siteConfig.name}
                                 width={40}
                                 height={40}
                                 className="object-contain"

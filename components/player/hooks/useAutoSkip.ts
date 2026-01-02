@@ -49,13 +49,35 @@ export function useAutoSkip({
     const hasTriggeredOutroSkipRef = useRef(false);
     // Track if we're currently in the outro zone for UI purposes
     const [isOutroActive, setIsOutroActive] = useState(false);
+    // Track if we're transitioning to next episode (for custom loading indicator)
+    const [isTransitioningToNextEpisode, setIsTransitioningToNextEpisode] = useState(false);
 
     // Reset flags when video source changes
     useEffect(() => {
         hasSkippedIntroRef.current = false;
         hasTriggeredOutroSkipRef.current = false;
         setIsOutroActive(false);
+        // Note: isTransitioningToNextEpisode is NOT reset here immediately
+        // because we want it to persist while the next episode is loading.
+        // It will be reset via the 'canplay' event below.
     }, [src, videoRef]);
+
+    // Handle resetting transition state when video is ready
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handleReady = () => {
+            setIsTransitioningToNextEpisode(false);
+        };
+
+        video.addEventListener('canplay', handleReady);
+        video.addEventListener('playing', handleReady);
+        return () => {
+            video.removeEventListener('canplay', handleReady);
+            video.removeEventListener('playing', handleReady);
+        };
+    }, [videoRef]);
 
     // Check if we can advance to next episode
     const canAdvanceToNext = useCallback(() => {
@@ -82,6 +104,8 @@ export function useAutoSkip({
 
         console.log(`[AutoSkip] Triggering next episode via ${reason}`);
         lastHandledSrcRef.current = src;
+        // Set transitioning state for custom loading indicator
+        setIsTransitioningToNextEpisode(true);
         onNextEpisode();
     }, [src, onNextEpisode]);
 
@@ -203,5 +227,6 @@ export function useAutoSkip({
         hasSkippedIntro: hasSkippedIntroRef.current,
         hasTriggeredOutroSkip: hasTriggeredOutroSkipRef.current,
         isOutroActive,
+        isTransitioningToNextEpisode,
     };
 }

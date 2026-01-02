@@ -1,4 +1,4 @@
-# KVideo
+# 视频聚合平台 (KVideo)
 
 ![KVideo Banner](public/icon.png)
 
@@ -46,6 +46,7 @@
 
 ### 🎬 豆瓣集成
 
+- **电影 & 电视剧分类**：支持在电影和电视剧之间无缝切换，方便查找不同类型的影视资源
 - **详细影视信息**：自动获取豆瓣评分、演员阵容、剧情简介等详细信息
 - **推荐系统**：基于豆瓣数据的相关推荐
 - **专业评价**：展示豆瓣用户评价和专业影评
@@ -117,7 +118,49 @@ docker run -d -p 3000:3000 -e ACCESS_PASSWORD=your_secret_password --name kvideo
 - **无法在界面删除**：只能通过修改环境变量更改
 - **与本地密码兼容**：两种密码都可以解锁应用
 
-## � 自动订阅源配置
+## 🎨 站点名称自定义配置
+
+通过环境变量可以自定义站点名称、标题和描述，无需修改源代码。
+
+### 可用环境变量：
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `NEXT_PUBLIC_SITE_TITLE` | 浏览器标签页标题 | `视频聚合平台 - KVideo` |
+| `NEXT_PUBLIC_SITE_DESCRIPTION` | 站点描述 | `专属视频聚合播放平台，具备美观的 Liquid Glass UI` |
+| `NEXT_PUBLIC_SITE_NAME` | 站点头部名称 | `视频聚合平台` |
+
+### 配置示例：
+
+**Vercel 部署：**
+在 Vercel 项目设置中添加环境变量：
+
+- 变量名：`NEXT_PUBLIC_SITE_NAME`
+- 变量值：`我的视频平台`
+
+**Cloudflare Pages 部署：**
+在 Cloudflare Pages 项目设置中添加环境变量：
+- 变量名：`NEXT_PUBLIC_SITE_NAME`
+- 变量值：`我的视频平台`
+
+**Docker 部署：**
+```bash
+docker run -d -p 3000:3000 \
+  -e NEXT_PUBLIC_SITE_NAME="我的视频平台" \
+  -e NEXT_PUBLIC_SITE_TITLE="我的视频 - 聚合播放平台" \
+  -e NEXT_PUBLIC_SITE_DESCRIPTION="专属视频聚合播放平台" \
+  --name kvideo kuekhaoyang/kvideo:latest
+```
+
+**本地开发：**
+在项目根目录创建 `.env.local` 文件：
+```env
+NEXT_PUBLIC_SITE_NAME=我的视频平台
+NEXT_PUBLIC_SITE_TITLE=我的视频 - 聚合播放平台
+NEXT_PUBLIC_SITE_DESCRIPTION=专属视频聚合播放平台
+```
+
+## 📦 自动订阅源配置
 
 可以通过环境变量 `NEXT_PUBLIC_SUBSCRIPTION_SOURCES` 自动配置订阅源，应用启动时会自动加载并设置为自动更新。
 
@@ -138,6 +181,12 @@ docker run -d -p 3000:3000 -e NEXT_PUBLIC_SUBSCRIPTION_SOURCES='[{"name":"MySour
 **Vercel 部署：**
 
 在 Vercel 项目设置中添加环境变量：
+- 变量名：`NEXT_PUBLIC_SUBSCRIPTION_SOURCES`
+- 变量值：`[{"name":"...","url":"..."}]`
+
+**Cloudflare Pages 部署：**
+
+在 Cloudflare Pages 项目设置中添加环境变量：
 - 变量名：`NEXT_PUBLIC_SUBSCRIPTION_SOURCES`
 - 变量值：`[{"name":"...","url":"..."}]`
 
