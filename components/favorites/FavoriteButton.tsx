@@ -21,7 +21,7 @@ interface FavoriteButtonProps {
     className?: string;
     size?: number;
     showTooltip?: boolean;
-    isSecret?: boolean;
+    isPremium?: boolean;
 }
 
 export const FavoriteButton = memo<FavoriteButtonProps>(({
@@ -36,9 +36,9 @@ export const FavoriteButton = memo<FavoriteButtonProps>(({
     className = '',
     size = 20,
     showTooltip = true,
-    isSecret = false,
+    isPremium = false,
 }) => {
-    const { isFavorite, toggleFavorite } = useFavorites(isSecret);
+    const { isFavorite, toggleFavorite } = useFavorites(isPremium);
     const [isAnimating, setIsAnimating] = useState(false);
     const [isFav, setIsFav] = useState(false);
 

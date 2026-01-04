@@ -11,10 +11,10 @@ interface SearchResultsProps {
     results: Video[];
     availableSources: SourceBadge[];
     loading: boolean;
-    isSecret?: boolean;
+    isPremium?: boolean;
 }
 
-export function SearchResults({ results, availableSources, loading, isSecret = false }: SearchResultsProps) {
+export function SearchResults({ results, availableSources, loading, isPremium = false }: SearchResultsProps) {
     // Source badges hook - filters by video source
     const {
         selectedSources,
@@ -62,7 +62,7 @@ export function SearchResults({ results, availableSources, loading, isSecret = f
             )}
 
             {/* Display filtered videos (both source and type filters applied) */}
-            <VideoGrid videos={finalFilteredVideos} isSecret={isSecret} />
+            <VideoGrid videos={finalFilteredVideos} isPremium={isPremium} />
         </div>
     );
 }

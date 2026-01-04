@@ -6,11 +6,11 @@ import { siteConfig } from '@/lib/config/site-config';
 
 interface NavbarProps {
     onReset: () => void;
-    isSecretMode?: boolean;
+    isPremiumMode?: boolean;
 }
 
-export function Navbar({ onReset, isSecretMode = false }: NavbarProps) {
-    const settingsHref = isSecretMode ? '/secret/settings' : '/settings';
+export function Navbar({ onReset, isPremiumMode = false }: NavbarProps) {
+    const settingsHref = isPremiumMode ? '/premium/settings' : '/settings';
 
     return (
         <nav className="sticky top-0 z-[2000] pt-4 pb-2" style={{
@@ -23,7 +23,7 @@ export function Navbar({ onReset, isSecretMode = false }: NavbarProps) {
                 }}>
                     <div className="flex items-center justify-between gap-2 sm:gap-4">
                         <Link
-                            href={isSecretMode ? '/secret' : '/'}
+                            href={isPremiumMode ? '/premium' : '/'}
                             className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer min-w-0"
                             onClick={onReset}
                         >

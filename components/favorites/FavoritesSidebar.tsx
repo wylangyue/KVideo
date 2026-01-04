@@ -15,7 +15,7 @@ import { FavoritesList } from './FavoritesList';
 import { FavoritesFooter } from './FavoritesFooter';
 import { trapFocus } from '@/lib/accessibility/focus-management';
 
-export function FavoritesSidebar({ isSecret = false }: { isSecret?: boolean }) {
+export function FavoritesSidebar({ isPremium = false }: { isPremium?: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{
         isOpen: boolean;
@@ -23,7 +23,7 @@ export function FavoritesSidebar({ isSecret = false }: { isSecret?: boolean }) {
         source?: string;
         isClearAll?: boolean;
     }>({ isOpen: false });
-    const { favorites, removeFavorite, clearFavorites } = useFavorites(isSecret);
+    const { favorites, removeFavorite, clearFavorites } = useFavorites(isPremium);
     const sidebarRef = useRef<HTMLElement>(null);
     const cleanupFocusTrapRef = useRef<(() => void) | null>(null);
 
@@ -116,7 +116,7 @@ export function FavoritesSidebar({ isSecret = false }: { isSecret?: boolean }) {
                 <FavoritesList
                     favorites={favorites}
                     onRemove={handleDeleteItem}
-                    isSecret={isSecret}
+                    isPremium={isPremium}
                 />
 
                 <FavoritesFooter
@@ -126,7 +126,7 @@ export function FavoritesSidebar({ isSecret = false }: { isSecret?: boolean }) {
             </aside>
 
             {/* Watch History Sidebar - Right side */}
-            <WatchHistorySidebar isSecret={isSecret} />
+            <WatchHistorySidebar isPremium={isPremium} />
 
             {/* Confirm Dialog */}
             <ConfirmDialog

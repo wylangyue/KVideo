@@ -9,10 +9,10 @@ import { Video } from '@/lib/types';
 interface VideoGridProps {
   videos: Video[];
   className?: string;
-  isSecret?: boolean;
+  isPremium?: boolean;
 }
 
-export const VideoGrid = memo(function VideoGrid({ videos, className = '', isSecret = false }: VideoGridProps) {
+export const VideoGrid = memo(function VideoGrid({ videos, className = '', isPremium = false }: VideoGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const [displayMode, setDisplayMode] = useState<'normal' | 'grouped'>('normal');
@@ -106,8 +106,8 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isSec
         title: video.vod_name,
       };
 
-      if (isSecret) {
-        params.secret = '1';
+      if (isPremium) {
+        params.premium = '1';
       }
 
       const videoUrl = `/player?${new URLSearchParams(params).toString()}`;
@@ -116,7 +116,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isSec
 
       return { video, videoUrl, cardId };
     });
-  }, [videos, displayMode, isSecret]);
+  }, [videos, displayMode, isPremium]);
 
   // Grouped mode items
   const groupItems = useMemo(() => {
@@ -149,6 +149,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isSec
                 cardId={cardId}
                 isActive={isActive}
                 onCardClick={handleCardClick}
+                isPremium={isPremium}
               />
             );
           })
@@ -164,7 +165,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isSec
                 cardId={cardId}
                 isActive={isActive}
                 onCardClick={handleCardClick}
-                isSecret={isSecret}
+                isPremium={isPremium}
               />
             );
           })

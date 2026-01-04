@@ -10,18 +10,18 @@ import type { FavoriteItem } from '@/lib/types';
 interface FavoritesItemProps {
     item: FavoriteItem;
     onRemove: () => void;
-    isSecret?: boolean;
+    isPremium?: boolean;
 }
 
-export function FavoritesItem({ item, onRemove, isSecret = false }: FavoritesItemProps) {
+export function FavoritesItem({ item, onRemove, isPremium = false }: FavoritesItemProps) {
     const getVideoUrl = (): string => {
         const params = new URLSearchParams({
             id: item.videoId.toString(),
             source: item.source,
             title: item.title,
         });
-        if (isSecret) {
-            params.set('secret', '1');
+        if (isPremium) {
+            params.set('premium', '1');
         }
         return `/player?${params.toString()}`;
     };

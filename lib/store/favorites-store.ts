@@ -118,13 +118,13 @@ const createFavoritesStore = (name: string) =>
     );
 
 export const useFavoritesStore = createFavoritesStore('kvideo-favorites-store');
-export const useSecretFavoritesStore = createFavoritesStore('kvideo-secret-favorites-store');
+export const usePremiumFavoritesStore = createFavoritesStore('kvideo-premium-favorites-store');
 
 /**
  * Helper hook to get the appropriate favorites store
  */
-export function useFavorites(isSecret = false) {
+export function useFavorites(isPremium = false) {
     const normalStore = useFavoritesStore();
-    const secretStore = useSecretFavoritesStore();
-    return isSecret ? secretStore : normalStore;
+    const premiumStore = usePremiumFavoritesStore();
+    return isPremium ? premiumStore : normalStore;
 }

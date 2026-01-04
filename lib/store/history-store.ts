@@ -152,13 +152,13 @@ const createHistoryStore = (name: string) =>
   );
 
 export const useHistoryStore = createHistoryStore('kvideo-history-store');
-export const useSecretHistoryStore = createHistoryStore('kvideo-secret-history-store');
+export const usePremiumHistoryStore = createHistoryStore('kvideo-premium-history-store');
 
 /**
  * Helper hook to get the appropriate history store
  */
-export function useHistory(isSecret = false) {
+export function useHistory(isPremium = false) {
   const normalStore = useHistoryStore();
-  const secretStore = useSecretHistoryStore();
-  return isSecret ? secretStore : normalStore;
+  const premiumStore = usePremiumHistoryStore();
+  return isPremium ? premiumStore : normalStore;
 }

@@ -14,7 +14,7 @@ import { HistoryList } from './HistoryList';
 import { HistoryFooter } from './HistoryFooter';
 import { trapFocus } from '@/lib/accessibility/focus-management';
 
-export function WatchHistorySidebar({ isSecret = false }: { isSecret?: boolean }) {
+export function WatchHistorySidebar({ isPremium = false }: { isPremium?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -22,7 +22,7 @@ export function WatchHistorySidebar({ isSecret = false }: { isSecret?: boolean }
     source?: string;
     isClearAll?: boolean;
   }>({ isOpen: false });
-  const { viewingHistory, removeFromHistory, clearHistory } = useHistory(isSecret);
+  const { viewingHistory, removeFromHistory, clearHistory } = useHistory(isPremium);
   const sidebarRef = useRef<HTMLElement>(null);
   const cleanupFocusTrapRef = useRef<(() => void) | null>(null);
 

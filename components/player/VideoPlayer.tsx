@@ -18,7 +18,7 @@ interface VideoPlayerProps {
   totalEpisodes?: number;
   onNextEpisode?: () => void;
   isReversed?: boolean;
-  isSecret?: boolean;
+  isPremium?: boolean;
 }
 
 export function VideoPlayer({
@@ -29,7 +29,7 @@ export function VideoPlayer({
   totalEpisodes,
   onNextEpisode,
   isReversed = false,
-  isSecret = false
+  isPremium = false
 }: VideoPlayerProps) {
   const [videoError, setVideoError] = useState<string>('');
   const [useProxy, setUseProxy] = useState(false);
@@ -49,7 +49,7 @@ export function VideoPlayer({
 
   // Use reactive hook to subscribe to history updates
   // This ensures the component re-renders when history is hydrated from localStorage
-  const { viewingHistory, addToHistory } = useHistory(isSecret);
+  const { viewingHistory, addToHistory } = useHistory(isPremium);
   const searchParams = useSearchParams();
 
   // Get video metadata from URL params

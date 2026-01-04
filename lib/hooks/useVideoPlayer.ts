@@ -64,7 +64,7 @@ export function useVideoPlayer(
       const settings = settingsStore.getSettings();
       const allSources = [
         ...settings.sources,
-        ...settings.adultSources,
+        ...settings.premiumSources,
         ...settings.subscriptions,
       ];
 

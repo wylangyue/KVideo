@@ -84,8 +84,8 @@ export function PopularFeatures({ onSearch }: PopularFeaturesProps) {
         newTagInput={newTagInput}
         justAddedTag={justAddedTag}
         onTagSelect={(tagId) => {
-          if (tagId === 'custom_色情' || tags.find(t => t.id === tagId)?.label === '色情') {
-            window.location.href = '/secret';
+          if (tagId === 'custom_高级' || tags.find(t => t.id === tagId)?.label === '高级') {
+            window.location.href = '/premium';
             return;
           }
           setSelectedTag(tagId);

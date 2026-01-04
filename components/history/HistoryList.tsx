@@ -5,10 +5,10 @@ import type { VideoHistoryItem } from '@/lib/types';
 interface HistoryListProps {
     history: VideoHistoryItem[];
     onRemove: (videoId: string | number, source: string) => void;
-    isSecret?: boolean;
+    isPremium?: boolean;
 }
 
-export function HistoryList({ history, onRemove, isSecret = false }: HistoryListProps) {
+export function HistoryList({ history, onRemove, isPremium = false }: HistoryListProps) {
     return (
         <div className="flex-1 overflow-y-auto -mx-2 px-2" style={{
             transform: 'translate3d(0, 0, 0)',
@@ -23,7 +23,7 @@ export function HistoryList({ history, onRemove, isSecret = false }: HistoryList
                             key={`${item.videoId}-${item.source}-${item.timestamp}`}
                             item={item}
                             onRemove={() => onRemove(item.videoId, item.source)}
-                            isSecret={isSecret}
+                            isPremium={isPremium}
                         />
                     ))}
                 </div>

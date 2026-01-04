@@ -13,10 +13,10 @@ import type { VideoHistoryItem } from '@/lib/types';
 interface HistoryItemProps {
   item: VideoHistoryItem;
   onRemove: () => void;
-  isSecret?: boolean;
+  isPremium?: boolean;
 }
 
-export function HistoryItem({ item, onRemove, isSecret = false }: HistoryItemProps) {
+export function HistoryItem({ item, onRemove, isPremium = false }: HistoryItemProps) {
   const getVideoUrl = (): string => {
     const params = new URLSearchParams({
       id: item.videoId.toString(),
@@ -24,8 +24,8 @@ export function HistoryItem({ item, onRemove, isSecret = false }: HistoryItemPro
       title: item.title,
       episode: item.episodeIndex.toString(),
     });
-    if (isSecret) {
-      params.set('secret', '1');
+    if (isPremium) {
+      params.set('premium', '1');
     }
     return `/player?${params.toString()}`;
   };
@@ -90,7 +90,7 @@ export function HistoryItem({ item, onRemove, isSecret = false }: HistoryItemPro
               size={14}
               className="!p-1.5 !bg-transparent !border-0 !shadow-none hover:!bg-[var(--glass-bg)]"
               showTooltip={false}
-              isSecret={isSecret}
+              isPremium={isPremium}
             />
 
             {/* Delete button */}
