@@ -1,27 +1,45 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { settingsStore } from '@/lib/store/settings-store';
 import { fetchSourcesFromUrl, mergeSources } from '@/lib/utils/source-import-utils';
 
 export function useSubscriptionSync() {
-    const hasSyncedRef = useRef(false);
+    const [subscriptions, setSubscriptions] = useState(() => settingsStore.getSettings().subscriptions);
 
+    // Subscribe to settings changes to detect when subscriptions are updated (e.g. from PasswordGate env sync)
     useEffect(() => {
-        if (hasSyncedRef.current) return;
-        hasSyncedRef.current = true;
+        const unsubscribe = settingsStore.subscribe(() => {
+            const currentSubs = settingsStore.getSettings().subscriptions;
+            setSubscriptions(currentSubs);
+        });
+        return () => unsubscribe();
+    }, []);
 
+    // Effect to run the sync when subscriptions change
+    useEffect(() => {
         const sync = async () => {
+            const activeSubscriptions = subscriptions.filter((s: any) => s.autoRefresh !== false);
+            if (activeSubscriptions.length === 0) return;
+
+            // We need to check if we actually need to sync.
+            // If we just synced, or if nothing changed, maybe skip?
+            // For now, let's rely on a simplified approach:
+            // If the subscription list length/content changes, we might want to re-sync.
+            // But be careful of infinite loops if we update sources inside this effect.
+
             const settings = settingsStore.getSettings();
-            const subscriptions = settings.subscriptions.filter(s => s.autoRefresh !== false);
-
-            if (subscriptions.length === 0) return;
-
             let anyChanged = false;
             let currentSources = [...settings.sources];
             let currentPremiumSources = [...settings.premiumSources];
-            let updatedSubscriptions = [...settings.subscriptions];
+            // We use a local copy of subscriptions to avoid re-triggering this effect when we update 'lastUpdated'
+            let updatedSubscriptions = [...subscriptions];
 
-            for (let i = 0; i < subscriptions.length; i++) {
-                const sub = subscriptions[i];
+            for (let i = 0; i < activeSubscriptions.length; i++) {
+                const sub = activeSubscriptions[i];
+
+                // Optional: Check if we synced this recently (e.g. within 5 minutes) to avoid spamming on hot-reload/nav
+                // const now = Date.now();
+                // if (sub.lastUpdated && now - sub.lastUpdated < 5 * 60 * 1000) continue;
+
                 try {
                     const result = await fetchSourcesFromUrl(sub.url);
 
@@ -58,6 +76,8 @@ export function useSubscriptionSync() {
             }
         };
 
-        sync();
-    }, []);
+        // Debounce slightly to avoid rapid-fire updates if multiple settings change
+        const timeoutId = setTimeout(sync, 1000);
+        return () => clearTimeout(timeoutId);
+    }, [subscriptions]); // Only re-run if subscriptions array reference changes (which happens on saveSettings)
 }

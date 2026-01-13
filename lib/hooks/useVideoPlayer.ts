@@ -54,10 +54,16 @@ export function useVideoPlayer(
     isReversedRef.current = isReversed;
   }, [isReversed]);
 
+
+
   const fetchVideoDetails = useCallback(async () => {
     if (!videoId || !source) return;
 
     try {
+      // Don't clear error immediately if we are just retrying silently, 
+      // but for manual retry or initial load we should.
+      // Let's clear it to show loading state if we want, or keep it.
+      // Standard behavior: clear error and show loading.
       setVideoError('');
       setLoading(true);
 
@@ -120,6 +126,33 @@ export function useVideoPlayer(
       setLoading(false);
     }
   }, [videoId, source]);
+
+  // EFFECT: Retry logic when settings change (e.g., sources loaded from subscriptions)
+  useEffect(() => {
+    if (!videoId || !source || !videoError) return;
+
+    const unsubscribe = settingsStore.subscribe(() => {
+      // If we are currently in an error state (likely "Invalid source configuration"),
+      // and settings updated (likely new sources arrived), try fetching again.
+      // We can be smarter: check if the source ID now exists in the store.
+      const settings = settingsStore.getSettings();
+      const allSources = [
+        ...settings.sources,
+        ...settings.premiumSources,
+        ...settings.subscriptions, // note: subscription items aren't usually video sources directly but let's check broadly
+      ];
+
+      // We really need to check if the specific source ID is now available
+      // But since 'subscriptions' in store expands into 'sources'/'premiumSources',
+      // we just check if any sources exist now.
+      if (allSources.length > 0) {
+        console.log("Settings updated, retrying video fetch...");
+        fetchVideoDetails();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [videoId, source, videoError, fetchVideoDetails]);
 
   // Sync state from params if they change externally (e.g. back/forward navigation)
   useEffect(() => {

@@ -459,3 +459,7 @@ npm start
   <br>
   如果这个项目对你有帮助，请考虑给一个 ⭐️
 </div>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=KuekHaoYang/KVideo&type=date&legend=top-left)](https://www.star-history.com/#KuekHaoYang/KVideo&type=date&legend=top-left)

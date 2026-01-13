@@ -1,6 +1,6 @@
 {
   "name": "kvideo",
-  "version": "3.9.2",
+  "version": "3.9.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,7 +19,7 @@
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
