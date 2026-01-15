@@ -131,7 +131,7 @@ export function createSubscription(name: string, url: string): SourceSubscriptio
         id: `sub_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         name: name.trim() || '未命名订阅',
         url: url.trim(),
-        lastUpdated: Date.now(),
+        lastUpdated: 0,
         autoRefresh: true,
     };
 }

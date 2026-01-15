@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearchCache } from '@/lib/hooks/useSearchCache';
 import { useParallelSearch } from '@/lib/hooks/useParallelSearch';
+import { useSubscriptionSync } from '@/lib/hooks/useSubscriptionSync';
 import { settingsStore, type SortOption } from '@/lib/store/settings-store';
 
 export function useHomePage() {
+    useSubscriptionSync();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { loadFromCache, saveToCache } = useSearchCache();
