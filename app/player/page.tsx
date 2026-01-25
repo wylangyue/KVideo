@@ -217,8 +217,7 @@ function PlayerContent() {
                       }
                       setCurrentSourceId(newSource.source);
                       router.replace(`/player?${params.toString()}`, { scroll: false });
-                      // Trigger refetch
-                      window.location.reload();
+                      // Data will be refetched automatically via useEffect in useVideoPlayer hook
                     }}
                   />
                 )}

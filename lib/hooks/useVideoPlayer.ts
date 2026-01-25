@@ -169,6 +169,10 @@ export function useVideoPlayer(
 
   useEffect(() => {
     if (videoId && source) {
+      // Reset state when source changes to ensure clean fetch
+      setVideoData(null);
+      setCurrentEpisode(0);
+      setPlayUrl('');
       fetchVideoDetails();
     }
   }, [videoId, source, fetchVideoDetails]);
