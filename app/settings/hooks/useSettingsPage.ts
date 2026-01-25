@@ -26,6 +26,7 @@ export function useSettingsPage() {
     // Display settings
     const [realtimeLatency, setRealtimeLatency] = useState(false);
     const [searchDisplayMode, setSearchDisplayMode] = useState<SearchDisplayMode>('normal');
+    const [fullscreenType, setFullscreenType] = useState<'native' | 'window'>('native');
 
     useEffect(() => {
         const settings = settingsStore.getSettings();
@@ -36,6 +37,7 @@ export function useSettingsPage() {
         setAccessPasswords(settings.accessPasswords);
         setRealtimeLatency(settings.realtimeLatency);
         setSearchDisplayMode(settings.searchDisplayMode);
+        setFullscreenType(settings.fullscreenType);
 
         // Fetch env password status
         fetch('/api/config')
@@ -279,6 +281,15 @@ export function useSettingsPage() {
         });
     };
 
+    const handleFullscreenTypeChange = (type: 'native' | 'window') => {
+        setFullscreenType(type);
+        const currentSettings = settingsStore.getSettings();
+        settingsStore.saveSettings({
+            ...currentSettings,
+            fullscreenType: type,
+        });
+    };
+
     const handleRestoreDefaults = () => {
         const defaults = getDefaultSources();
         handleSourcesChange(defaults);
@@ -329,5 +340,7 @@ export function useSettingsPage() {
         handleEditSource,
         handleRealtimeLatencyChange,
         handleSearchDisplayModeChange,
+        fullscreenType,
+        handleFullscreenTypeChange,
     };
 }

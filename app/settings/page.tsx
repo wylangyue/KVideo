@@ -10,6 +10,7 @@ import { SortSettings } from '@/components/settings/SortSettings';
 import { DataSettings } from '@/components/settings/DataSettings';
 import { PasswordSettings } from '@/components/settings/PasswordSettings';
 import { DisplaySettings } from '@/components/settings/DisplaySettings';
+import { PlayerSettings } from '@/components/settings/PlayerSettings';
 import { SettingsHeader } from '@/components/settings/SettingsHeader';
 import { useSettingsPage } from './hooks/useSettingsPage';
 
@@ -22,6 +23,7 @@ export default function SettingsPage() {
     envPasswordSet,
     realtimeLatency,
     searchDisplayMode,
+    fullscreenType,
     isAddModalOpen,
     isExportModalOpen,
     isImportModalOpen,
@@ -52,6 +54,7 @@ export default function SettingsPage() {
     setEditingSource,
     handleRealtimeLatencyChange,
     handleSearchDisplayModeChange,
+    handleFullscreenTypeChange,
   } = useSettingsPage();
 
   return (
@@ -59,6 +62,12 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
         {/* Header */}
         <SettingsHeader />
+
+        {/* Player Settings */}
+        <PlayerSettings
+          fullscreenType={fullscreenType}
+          onFullscreenTypeChange={handleFullscreenTypeChange}
+        />
 
         {/* Password Settings */}
         <PasswordSettings

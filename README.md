@@ -129,6 +129,18 @@ docker run -d -p 3000:3000 -e ACCESS_PASSWORD=your_premium_password --name kvide
 - **全局生效**：所有用户都需要此密码才能访问
 - **无法在界面删除**：只能通过修改环境变量更改
 - **与本地密码兼容**：两种密码都可以解锁应用
+- **密码持久化**：支持通过 `PERSIST_PASSWORD` 环境变量控制是否在当前设备上记住密码。
+
+### 方式三：密码持久化设置（ENV）
+
+通过 `PERSIST_PASSWORD` 环境变量，你可以控制用户在输入正确密码后，是否需要在下次打开时重新输入。
+
+| 变量名 | 选项 | 说明 | 默认值 |
+|--------|------|------|--------|
+| `PERSIST_PASSWORD` | `true` / `false` | 是否在本地浏览器持久化保存解锁状态。设置为 `true` 时，用户只需输入一次密码，后续访问无需再次输入。 | `true` |
+
+> [!NOTE]
+> 此功能仅在设置了 `ACCESS_PASSWORD` 时才会生效。如果没有设置环境密码，此选项将被忽略。
 
 ## 🎨 站点名称自定义配置
 
@@ -141,6 +153,7 @@ docker run -d -p 3000:3000 -e ACCESS_PASSWORD=your_premium_password --name kvide
 | `NEXT_PUBLIC_SITE_TITLE` | 浏览器标签页标题 | `视频聚合平台 - KVideo` |
 | `NEXT_PUBLIC_SITE_DESCRIPTION` | 站点描述 | `专属视频聚合播放平台，具备美观的 Liquid Glass UI` |
 | `NEXT_PUBLIC_SITE_NAME` | 站点头部名称 | `视频聚合平台` |
+| `PERSIST_PASSWORD` | 密码持久化 | `true` |
 
 ### 配置示例：
 
