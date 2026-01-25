@@ -14,6 +14,7 @@ import { FavoritesSidebar } from '@/components/favorites/FavoritesSidebar';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { PlayerNavbar } from '@/components/player/PlayerNavbar';
 import { settingsStore } from '@/lib/store/settings-store';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import Image from 'next/image';
 
 function PlayerContent() {
@@ -28,23 +29,13 @@ function PlayerContent() {
   const episodeParam = searchParams.get('episode');
   const groupedSourcesParam = searchParams.get('groupedSources');
 
-  // Parse grouped sources if available
-  const groupedSources = useMemo<SourceInfo[]>(() => {
-    if (!groupedSourcesParam) return [];
-    try {
-      return JSON.parse(groupedSourcesParam);
-    } catch {
-      return [];
-    }
-  }, [groupedSourcesParam]);
-
-  // Track current source for switching
-  const [currentSourceId, setCurrentSourceId] = useState(source);
-
   // Track settings
   const [isReversed, setIsReversed] = useState(() =>
     typeof window !== 'undefined' ? settingsStore.getSettings().episodeReverseOrder : false
   );
+
+  // Mobile tab state
+  const [activeTab, setActiveTab] = useState<'episodes' | 'info' | 'sources'>('episodes');
 
   // Sync with store changes if any (though usually it's one-way from UI to store)
   useEffect(() => {
@@ -68,6 +59,32 @@ function PlayerContent() {
     setVideoError,
     fetchVideoDetails,
   } = useVideoPlayer(videoId, source, episodeParam, isReversed);
+
+  // Parse grouped sources if available
+  const groupedSources = useMemo<SourceInfo[]>(() => {
+    let sources: SourceInfo[] = [];
+    if (groupedSourcesParam) {
+      try {
+        sources = JSON.parse(groupedSourcesParam);
+      } catch {
+        sources = [];
+      }
+    }
+
+    // Always ensure the current source is in the list
+    if (source && !sources.find(s => s.source === source)) {
+      sources.unshift({
+        id: videoId || '',
+        source: source,
+        sourceName: source,
+        pic: videoData?.vod_pic
+      });
+    }
+    return sources;
+  }, [groupedSourcesParam, source, videoId, videoData?.vod_pic]);
+
+  // Track current source for switching
+  const [currentSourceId, setCurrentSourceId] = useState(source);
 
   // Add initial history entry when video data is loaded
   useEffect(() => {
@@ -159,16 +176,18 @@ function PlayerContent() {
                 videoId={videoId || undefined}
                 currentEpisode={currentEpisode}
                 onBack={() => router.back()}
-                totalEpisodes={videoData?.episodes?.length || 1}
+                totalEpisodes={videoData?.episodes?.length || 0}
                 onNextEpisode={handleNextEpisode}
                 isReversed={isReversed}
                 isPremium={isPremium}
               />
-              <VideoMetadata
-                videoData={videoData}
-                source={source}
-                title={title}
-              />
+              <div className="hidden lg:block">
+                <VideoMetadata
+                  videoData={videoData}
+                  source={source}
+                  title={title}
+                />
+              </div>
 
               {/* Favorite Button for current video */}
               {videoData && videoId && (
@@ -193,33 +212,60 @@ function PlayerContent() {
             {/* Sidebar with sticky wrapper */}
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-32 space-y-6">
-                <EpisodeList
-                  episodes={videoData?.episodes || null}
-                  currentEpisode={currentEpisode}
-                  isReversed={isReversed}
-                  onEpisodeClick={handleEpisodeClick}
-                  onToggleReverse={handleToggleReverse}
-                />
-
-                {/* Source Selector - only show when grouped sources available */}
-                {groupedSources.length > 1 && (
-                  <SourceSelector
-                    sources={groupedSources}
-                    currentSource={currentSourceId || source || ''}
-                    onSourceChange={(newSource) => {
-                      // Navigate to same video with different source
-                      const params = new URLSearchParams();
-                      params.set('id', String(newSource.id));
-                      params.set('source', newSource.source);
-                      params.set('title', title || '');
-                      if (groupedSourcesParam) {
-                        params.set('groupedSources', groupedSourcesParam);
-                      }
-                      setCurrentSourceId(newSource.source);
-                      router.replace(`/player?${params.toString()}`, { scroll: false });
-                      // Data will be refetched automatically via useEffect in useVideoPlayer hook
-                    }}
+                {/* Mobile Tabs */}
+                {groupedSources.length > 0 && (
+                  <SegmentedControl
+                    options={[
+                      { label: '选集', value: 'episodes' },
+                      { label: '简介', value: 'info' },
+                      ...(groupedSources.length > 1 ? [{ label: '来源', value: 'sources' as const }] : []),
+                    ]}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    className="lg:hidden mb-4"
                   />
+                )}
+
+                {/* Info Tab Content - Mobile Only */}
+                <div className={activeTab !== 'info' ? 'hidden' : 'block lg:hidden'}>
+                  <VideoMetadata
+                    videoData={videoData}
+                    source={source}
+                    title={title}
+                  />
+                </div>
+
+                {/* Episode List - Visible if desktop OR active mobile tab */}
+                <div className={activeTab !== 'episodes' ? 'hidden lg:block' : 'block'}>
+                  <EpisodeList
+                    episodes={videoData?.episodes || null}
+                    currentEpisode={currentEpisode}
+                    isReversed={isReversed}
+                    onEpisodeClick={handleEpisodeClick}
+                    onToggleReverse={handleToggleReverse}
+                  />
+                </div>
+
+                {/* Source Selector - Visible if (desktop AND grouped sources) OR (active mobile tab AND grouped sources) */}
+                {groupedSources.length > 0 && (
+                  <div className={activeTab !== 'sources' ? 'hidden lg:block' : 'block'}>
+                    <SourceSelector
+                      sources={groupedSources}
+                      currentSource={currentSourceId || source || ''}
+                      onSourceChange={(newSource) => {
+                        // Navigate to same video with different source
+                        const params = new URLSearchParams();
+                        params.set('id', String(newSource.id));
+                        params.set('source', newSource.source);
+                        params.set('title', title || '');
+                        if (groupedSourcesParam) {
+                          params.set('groupedSources', groupedSourcesParam);
+                        }
+                        setCurrentSourceId(newSource.source);
+                        router.replace(`/player?${params.toString()}`, { scroll: false });
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             </div>

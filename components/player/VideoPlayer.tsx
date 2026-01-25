@@ -42,19 +42,36 @@ export function VideoPlayer({
   const SAVE_INTERVAL = 5000; // 5 seconds throttle
 
   // Get showModeIndicator setting
+  // Get showModeIndicator and proxyMode settings
   const [showModeIndicator, setShowModeIndicator] = useState(false);
+  const [proxyMode, setProxyMode] = useState<'retry' | 'none' | 'always'>('retry');
 
   useEffect(() => {
     // Initial value
-    setShowModeIndicator(settingsStore.getSettings().showModeIndicator);
+    const settings = settingsStore.getSettings();
+    setShowModeIndicator(settings.showModeIndicator);
+    setProxyMode(settings.proxyMode);
 
     // Subscribe to changes
     const unsubscribe = settingsStore.subscribe(() => {
-      setShowModeIndicator(settingsStore.getSettings().showModeIndicator);
+      const newSettings = settingsStore.getSettings();
+      setShowModeIndicator(newSettings.showModeIndicator);
+      setProxyMode(newSettings.proxyMode);
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Initialize useProxy based on proxyMode when the component mounts or proxyMode changes
+  // We use a separate effect for this to react to setting changes
+  useEffect(() => {
+    if (proxyMode === 'always') {
+      setUseProxy(true);
+    } else if (proxyMode === 'none') {
+      setUseProxy(false);
+    }
+    // For 'retry', we assume it starts as false (direct), which is the default state of useProxy
+  }, [proxyMode]);
 
 
   // Use reactive hook to subscribe to history updates
@@ -134,8 +151,13 @@ export function VideoPlayer({
   const handleVideoError = (error: string) => {
     console.error('Video playback error:', error);
 
-    // Auto-retry with proxy if not already using it
-    if (!useProxy) {
+    // Auto-retry with proxy if:
+    // 1. Not already using proxy
+    // 2. Proxy mode is NOT 'none' (so 'retry' or potentially 'always' if it somehow failed locally)
+    // 3. Proxy mode is 'retry' (specifically for the auto-switch logic)
+    // Note: If mode is 'always', we are already using proxy. If it fails, we show error.
+
+    if (!useProxy && proxyMode === 'retry') {
       setUseProxy(true);
       setShouldAutoPlay(true); // Force autoplay after proxy retry
       setVideoError('');
@@ -164,7 +186,7 @@ export function VideoPlayer({
     setUseProxy(prev => !prev);
   };
 
-  const finalPlayUrl = useProxy
+  const finalPlayUrl = useProxy || proxyMode === 'always'
     ? `/api/proxy?url=${encodeURIComponent(playUrl)}&retry=${retryCount}` // Add retry param to force fresh request
     : playUrl;
 

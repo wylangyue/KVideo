@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo, memo, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { VideoCard } from './VideoCard';
 import { VideoGroupCard, GroupedVideo } from './VideoGroupCard';
 import { settingsStore } from '@/lib/store/settings-store';
@@ -10,19 +11,55 @@ interface VideoGridProps {
   videos: Video[];
   className?: string;
   isPremium?: boolean;
+  latencies?: Record<string, number>;
 }
 
-export const VideoGrid = memo(function VideoGrid({ videos, className = '', isPremium = false }: VideoGridProps) {
+export const VideoGrid = memo(function VideoGrid({
+  videos,
+  className = '',
+  isPremium = false,
+  latencies = {}
+}: VideoGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const [displayMode, setDisplayMode] = useState<'normal' | 'grouped'>('normal');
   const gridRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Load display mode from settings
   useEffect(() => {
     const settings = settingsStore.getSettings();
     setDisplayMode(settings.searchDisplayMode);
+
+    // Initial load: Check for saved scroll position to ensure we render enough items
+    const params = searchParams.toString();
+    const scrollKey = `scroll-pos:${pathname}${params ? '?' + params : ''}`;
+    const savedPos = sessionStorage.getItem(scrollKey);
+
+    if (savedPos && settings.rememberScrollPosition) {
+      const position = parseInt(savedPos, 10);
+      if (!isNaN(position) && position > 500) {
+        // Approximate visible count needed: 
+        // 500 is roughly where the second/third row starts.
+        // Each row is ~300-400px high on most screens. 
+        // 24 items is 4-6 rows.
+        // If scroll is deep, we force a larger initial visible count.
+        // 24, 48, 72, 96...
+        const estimatedRowsNeeded = Math.ceil(position / 300) + 2;
+        // Match CSS breakpoints: sm: 3, md: 4, lg: 5, xl: 6
+        const itemsPerRow = window.innerWidth >= 1280 ? 6 :
+          (window.innerWidth >= 1024 ? 5 :
+            (window.innerWidth >= 768 ? 4 :
+              (window.innerWidth >= 640 ? 3 : 2)));
+        const neededCount = Math.min(videos.length, estimatedRowsNeeded * itemsPerRow);
+
+        if (neededCount > 24) {
+          setVisibleCount(Math.ceil(neededCount / 24) * 24);
+        }
+      }
+    }
 
     const unsubscribe = settingsStore.subscribe(() => {
       const newSettings = settingsStore.getSettings();
@@ -30,7 +67,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isPre
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [pathname, searchParams, videos.length]);
 
   if (videos.length === 0) {
     return null;
@@ -150,6 +187,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isPre
                 isActive={isActive}
                 onCardClick={handleCardClick}
                 isPremium={isPremium}
+                latencies={latencies}
               />
             );
           })
@@ -166,6 +204,7 @@ export const VideoGrid = memo(function VideoGrid({ videos, className = '', isPre
                 isActive={isActive}
                 onCardClick={handleCardClick}
                 isPremium={isPremium}
+                latencies={latencies}
               />
             );
           })

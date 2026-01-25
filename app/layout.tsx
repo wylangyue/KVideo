@@ -8,6 +8,8 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PasswordGate } from "@/components/PasswordGate";
 import { siteConfig } from "@/lib/config/site-config";
 import { AdKeywordsInjector } from "@/components/AdKeywordsInjector";
+import { BackToTop } from "@/components/ui/BackToTop";
+import { ScrollPositionManager } from "@/components/ScrollPositionManager";
 import fs from 'fs';
 import path from 'path';
 
@@ -83,6 +85,8 @@ export default function RootLayout({
           <PasswordGate hasEnvPassword={!!process.env.ACCESS_PASSWORD}>
             <AdKeywordsWrapper />
             {children}
+            <BackToTop />
+            <ScrollPositionManager />
           </PasswordGate>
           <Analytics />
           <ServiceWorkerRegister />

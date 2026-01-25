@@ -19,6 +19,7 @@ interface VideoCardProps {
     isActive: boolean;
     onCardClick: (e: React.MouseEvent, cardId: string, videoUrl: string) => void;
     isPremium?: boolean;
+    latencies?: Record<string, number>;
 }
 
 export const VideoCard = memo<VideoCardProps>(({
@@ -27,8 +28,10 @@ export const VideoCard = memo<VideoCardProps>(({
     cardId,
     isActive,
     onCardClick,
-    isPremium = false
+    isPremium = false,
+    latencies = {}
 }) => {
+    const displayLatency = latencies[video.source] ?? video.latency;
     return (
         <div
             style={{
@@ -91,8 +94,8 @@ export const VideoCard = memo<VideoCardProps>(({
                                 </Badge>
                             )}
 
-                            {video.latency !== undefined && (
-                                <LatencyBadge latency={video.latency} className="flex-shrink-0" />
+                            {displayLatency !== undefined && (
+                                <LatencyBadge latency={displayLatency} className="flex-shrink-0" />
                             )}
                         </div>
 

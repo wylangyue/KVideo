@@ -19,6 +19,7 @@ export type SortOption =
 
 export type SearchDisplayMode = 'normal' | 'grouped';
 export type AdFilterMode = 'off' | 'keyword' | 'heuristic' | 'aggressive';
+export type ProxyMode = 'retry' | 'none' | 'always';
 
 export interface AppSettings {
   sources: VideoSource[];
@@ -44,6 +45,8 @@ export interface AppSettings {
   searchDisplayMode: SearchDisplayMode; // 'normal' = individual cards, 'grouped' = group same-name videos
   episodeReverseOrder: boolean; // Persist episode list reverse state
   fullscreenType: 'native' | 'window'; // Fullscreen mode preference
+  proxyMode: ProxyMode; // Proxy behavior: 'retry' | 'none' | 'always'
+  rememberScrollPosition: boolean; // Remember scroll position when navigating back or refreshing
 }
 
 import { exportSettings, importSettings, SEARCH_HISTORY_KEY, WATCH_HISTORY_KEY } from './settings-helpers';
@@ -116,6 +119,8 @@ function getDefaultAppSettings(): AppSettings {
     searchDisplayMode: 'normal',
     episodeReverseOrder: false,
     fullscreenType: 'native',
+    proxyMode: 'retry',
+    rememberScrollPosition: true,
   };
 }
 
@@ -192,6 +197,8 @@ export const settingsStore = {
         searchDisplayMode: parsed.searchDisplayMode === 'grouped' ? 'grouped' : 'normal',
         episodeReverseOrder: parsed.episodeReverseOrder !== undefined ? parsed.episodeReverseOrder : false,
         fullscreenType: parsed.fullscreenType === 'window' ? 'window' : 'native',
+        proxyMode: (parsed.proxyMode === 'retry' || parsed.proxyMode === 'none' || parsed.proxyMode === 'always') ? parsed.proxyMode : 'retry',
+        rememberScrollPosition: parsed.rememberScrollPosition !== undefined ? parsed.rememberScrollPosition : true,
       };
     } catch {
       // Even if localStorage fails, we should return defaults + ENV subscriptions

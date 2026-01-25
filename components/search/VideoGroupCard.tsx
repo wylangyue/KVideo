@@ -31,6 +31,7 @@ interface VideoGroupCardProps {
     isActive: boolean;
     onCardClick: (e: React.MouseEvent, cardId: string, videoUrl: string) => void;
     isPremium?: boolean;
+    latencies?: Record<string, number>;
 }
 
 export const VideoGroupCard = memo<VideoGroupCardProps>(({
@@ -38,15 +39,16 @@ export const VideoGroupCard = memo<VideoGroupCardProps>(({
     cardId,
     isActive,
     onCardClick,
-    isPremium = false
+    isPremium = false,
+    latencies = {}
 }) => {
     const { representative, videos, name } = group;
 
-    // Best latency from the group
+    // Best latency from the group, preferring real-time updates
     const bestLatency = useMemo(() => {
-        const latencies = videos.filter(v => v.latency !== undefined).map(v => v.latency!);
-        return latencies.length > 0 ? Math.min(...latencies) : undefined;
-    }, [videos]);
+        const currentLatencies = videos.map(v => latencies[v.source] ?? v.latency).filter(l => l !== undefined) as number[];
+        return currentLatencies.length > 0 ? Math.min(...currentLatencies) : undefined;
+    }, [videos, latencies]);
 
     // Generate URL with grouped sources data
     const videoUrl = useMemo(() => {

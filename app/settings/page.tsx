@@ -55,6 +55,10 @@ export default function SettingsPage() {
     handleRealtimeLatencyChange,
     handleSearchDisplayModeChange,
     handleFullscreenTypeChange,
+    proxyMode,
+    handleProxyModeChange,
+    rememberScrollPosition,
+    handleRememberScrollPositionChange,
   } = useSettingsPage();
 
   return (
@@ -67,6 +71,8 @@ export default function SettingsPage() {
         <PlayerSettings
           fullscreenType={fullscreenType}
           onFullscreenTypeChange={handleFullscreenTypeChange}
+          proxyMode={proxyMode}
+          onProxyModeChange={handleProxyModeChange}
         />
 
         {/* Password Settings */}
@@ -83,8 +89,10 @@ export default function SettingsPage() {
         <DisplaySettings
           realtimeLatency={realtimeLatency}
           searchDisplayMode={searchDisplayMode}
+          rememberScrollPosition={rememberScrollPosition}
           onRealtimeLatencyChange={handleRealtimeLatencyChange}
           onSearchDisplayModeChange={handleSearchDisplayModeChange}
+          onRememberScrollPositionChange={handleRememberScrollPositionChange}
         />
 
         {/* Source Management */}

@@ -12,9 +12,16 @@ interface SearchResultsProps {
     availableSources: SourceBadge[];
     loading: boolean;
     isPremium?: boolean;
+    latencies?: Record<string, number>;
 }
 
-export function SearchResults({ results, availableSources, loading, isPremium = false }: SearchResultsProps) {
+export function SearchResults({
+    results,
+    availableSources,
+    loading,
+    isPremium = false,
+    latencies = {}
+}: SearchResultsProps) {
     // Source badges hook - filters by video source
     const {
         selectedSources,
@@ -62,7 +69,11 @@ export function SearchResults({ results, availableSources, loading, isPremium = 
             )}
 
             {/* Display filtered videos (both source and type filters applied) */}
-            <VideoGrid videos={finalFilteredVideos} isPremium={isPremium} />
+            <VideoGrid
+                videos={finalFilteredVideos}
+                isPremium={isPremium}
+                latencies={latencies}
+            />
         </div>
     );
 }

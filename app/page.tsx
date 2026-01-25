@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { SearchForm } from '@/components/search/SearchForm';
 import { NoResults } from '@/components/search/NoResults';
 import { PopularFeatures } from '@/components/home/PopularFeatures';
@@ -9,6 +9,7 @@ import { FavoritesSidebar } from '@/components/favorites/FavoritesSidebar';
 import { Navbar } from '@/components/layout/Navbar';
 import { SearchResults } from '@/components/home/SearchResults';
 import { useHomePage } from '@/lib/hooks/useHomePage';
+import { useLatencyPing } from '@/lib/hooks/useLatencyPing';
 
 function HomePage() {
   const {
@@ -22,6 +23,17 @@ function HomePage() {
     handleSearch,
     handleReset,
   } = useHomePage();
+
+  // Real-time latency pinging
+  const sourceUrls = useMemo(() =>
+    availableSources.map(s => ({ id: s.id, baseUrl: s.id })), // Using id as baseUrl if not available elsewhere
+    [availableSources]
+  );
+
+  const { latencies } = useLatencyPing({
+    sourceUrls,
+    enabled: hasSearched && results.length > 0,
+  });
 
   return (
     <div className="min-h-screen">
@@ -52,6 +64,7 @@ function HomePage() {
             results={results}
             availableSources={availableSources}
             loading={loading}
+            latencies={latencies}
           />
         )}
 
