@@ -9,6 +9,7 @@ import { useStallDetection } from './hooks/useStallDetection';
 import { DesktopControlsWrapper } from './desktop/DesktopControlsWrapper';
 import { DesktopOverlayWrapper } from './desktop/DesktopOverlayWrapper';
 import { usePlayerSettings } from './hooks/usePlayerSettings';
+import { useIsIOS } from '@/lib/hooks/mobile/useDeviceDetection';
 import './web-fullscreen.css';
 
 interface DesktopVideoPlayerProps {
@@ -38,7 +39,11 @@ export function DesktopVideoPlayer({
   isReversed = false,
 }: DesktopVideoPlayerProps) {
   const { refs, data, actions } = useDesktopPlayerState();
-  const { fullscreenType } = usePlayerSettings();
+  const { fullscreenType: settingsFullscreenType } = usePlayerSettings();
+  const isIOS = useIsIOS();
+
+  // Force windowed fullscreen on iOS to avoid native player hijacking
+  const fullscreenType = isIOS ? 'window' : settingsFullscreenType;
 
   // Initialize HLS Player
   useHlsPlayer({
@@ -114,11 +119,34 @@ export function DesktopVideoPlayer({
     handleVideoError,
   } = logic;
 
+  // State to track if device is in landscape mode
+  const [isLandscape, setIsLandscape] = React.useState(true);
+
+  React.useEffect(() => {
+    const checkOrientation = () => {
+      // Check if width > height
+      if (typeof window !== 'undefined') {
+        setIsLandscape(window.innerWidth > window.innerHeight);
+      }
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
+  // Check if we need to force landscape (iOS + Fullscreen + Portrait)
+  const shouldForceLandscape = data.isFullscreen && fullscreenType === 'window' && isIOS && !isLandscape;
+
   return (
     <div
       ref={containerRef}
       className={`kvideo-container relative aspect-video bg-black rounded-[var(--radius-2xl)] group ${data.isFullscreen && fullscreenType === 'window' ? 'is-web-fullscreen' : ''
-        }`}
+        } ${shouldForceLandscape ? 'force-landscape' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
@@ -132,6 +160,8 @@ export function DesktopVideoPlayer({
             className="w-full h-full object-contain"
             poster={poster}
             x-webkit-airplay="allow"
+            playsInline={true} // Crucial for iOS custom fullscreen to work without native player taking over
+            controls={false} // Explicitly disable native controls
             onPlay={handlePlay}
             onPause={handlePause}
             onTimeUpdate={handleTimeUpdateEvent}
@@ -139,7 +169,13 @@ export function DesktopVideoPlayer({
             onError={handleVideoError}
             onWaiting={() => setIsLoading(true)}
             onCanPlay={() => setIsLoading(false)}
-            onClick={togglePlay}
+            onClick={(e) => {
+              // Prevent native behavior on iOS
+              // e.preventDefault(); 
+              // React synthetic event doesn't always stop native video toggle on iOS, but good practice
+              togglePlay();
+            }}
+            {...({ 'webkit-playsinline': 'true' } as any)} // Legacy iOS support
           />
 
           <DesktopOverlayWrapper
