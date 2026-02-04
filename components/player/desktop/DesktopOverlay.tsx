@@ -35,6 +35,7 @@ interface DesktopOverlayProps {
     onSpeedMenuMouseEnter: () => void;
     onSpeedMenuMouseLeave: () => void;
     containerRef: React.RefObject<HTMLDivElement | null>;
+    isRotated?: boolean;
 }
 
 export function DesktopOverlay({
@@ -67,6 +68,7 @@ export function DesktopOverlay({
     onSpeedMenuMouseEnter,
     onSpeedMenuMouseLeave,
     containerRef,
+    isRotated = false,
 }: DesktopOverlayProps) {
     // Show navigation buttons when controls are visible or when paused (controls usually show when paused anyway)
     const showNavButtons = showControls || !isPlaying;
@@ -83,6 +85,7 @@ export function DesktopOverlay({
                     onMouseLeave={onMoreMenuMouseLeave}
                     onCopyLink={onCopyLink}
                     containerRef={containerRef}
+                    isRotated={isRotated}
                 />
             </div>
 
@@ -97,6 +100,7 @@ export function DesktopOverlay({
                     onMouseEnter={onSpeedMenuMouseEnter}
                     onMouseLeave={onSpeedMenuMouseLeave}
                     containerRef={containerRef}
+                    isRotated={isRotated}
                 />
             </div>
 
@@ -138,14 +142,14 @@ export function DesktopOverlay({
             <div
                 className={`absolute left-0 top-0 bottom-0 flex items-center justify-center p-4 md:p-8 transition-opacity duration-300 z-10 ${showNavButtons ? 'opacity-100' : 'opacity-0'
                     }`}
-                style={{ pointerEvents: showNavButtons ? 'auto' : 'none' }}
+                style={{ pointerEvents: 'none' }}
             >
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onSkipBackward();
                     }}
-                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95"
+                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
                     aria-label="后退 10 秒"
                 >
                     <Icons.SkipBack className="w-5 h-5 md:w-8 md:h-8 text-white/80 group-hover:text-white" />
@@ -156,14 +160,14 @@ export function DesktopOverlay({
             <div
                 className={`absolute right-0 top-0 bottom-0 flex items-center justify-center p-4 md:p-8 transition-opacity duration-300 z-10 ${showNavButtons ? 'opacity-100' : 'opacity-0'
                     }`}
-                style={{ pointerEvents: showNavButtons ? 'auto' : 'none' }}
+                style={{ pointerEvents: 'none' }}
             >
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onSkipForward();
                     }}
-                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95"
+                    className="group flex items-center justify-center w-10 h-10 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
                     aria-label="前进 10 秒"
                 >
                     <Icons.FastForward className="w-5 h-5 md:w-8 md:h-8 text-white/80 group-hover:text-white" />

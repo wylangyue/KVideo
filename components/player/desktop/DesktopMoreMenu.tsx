@@ -15,6 +15,7 @@ interface DesktopMoreMenuProps {
     onMouseLeave: () => void;
     onCopyLink: (type?: 'original' | 'proxy') => void;
     containerRef: React.RefObject<HTMLDivElement | null>;
+    isRotated?: boolean;
 }
 
 export function DesktopMoreMenu({
@@ -24,7 +25,8 @@ export function DesktopMoreMenu({
     onMouseEnter,
     onMouseLeave,
     onCopyLink,
-    containerRef
+    containerRef,
+    isRotated = false
 }: DesktopMoreMenuProps) {
     const {
         autoNextEpisode,
@@ -49,7 +51,7 @@ export function DesktopMoreMenu({
 
     const buttonRef = React.useRef<HTMLButtonElement>(null);
     const menuRef = React.useRef<HTMLDivElement>(null);
-    const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0, maxHeight: 'none', openUpward: false });
+    const [menuPosition, setMenuPosition] = React.useState({ top: 0, left: 0, maxHeight: 'none', openUpward: false, align: 'right' as 'left' | 'right' });
     const [isAdFilterOpen, setAdFilterOpen] = React.useState(false);
 
     const AD_FILTER_LABELS: Record<string, string> = {
@@ -78,46 +80,105 @@ export function DesktopMoreMenu({
         };
     }, [containerRef]);
 
-    // Calculate menu position with available space awareness
+    // Dual Positioning Strategy
     const calculateMenuPosition = React.useCallback(() => {
         if (!buttonRef.current || !containerRef.current) return;
 
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
+        if (!isRotated) {
+            // Normal Mode: Non-rotated (Portrait on Mobile)
+            // Use Viewport Coordinates but position relative to button (User Request: "Below button")
+            // And use Body Portal to escape container clipping
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
 
-        // Space available below and above the button
-        const spaceBelow = viewportHeight - buttonRect.bottom - 20; // 20px margin
-        const spaceAbove = buttonRect.top - containerRect.top - 20;
+            const spaceBelow = viewportHeight - buttonRect.bottom - 10;
+            const spaceAbove = buttonRect.top - 10;
 
-        // Estimate menu height (or use actual if already rendered)
-        const estimatedMenuHeight = 450; // approximate height of menu
-        const actualMenuHeight = menuRef.current?.offsetHeight || estimatedMenuHeight;
+            const estimatedMenuHeight = 450;
+            const actualMenuHeight = menuRef.current?.offsetHeight || estimatedMenuHeight;
 
-        // Determine if we should open upward
-        const openUpward = spaceBelow < Math.min(actualMenuHeight, 300) && spaceAbove > spaceBelow;
+            const openUpward = spaceBelow < Math.min(actualMenuHeight, 300) && spaceAbove > spaceBelow;
+            const maxHeight = openUpward
+                ? Math.min(spaceAbove, actualMenuHeight)
+                : Math.min(spaceBelow, viewportHeight * 0.7);
 
-        // Calculate max-height based on available space
-        const maxHeight = openUpward
-            ? Math.min(spaceAbove, actualMenuHeight)
-            : Math.min(spaceBelow, viewportHeight * 0.7);
+            // Smart Horizontal Alignment:
+            // If button is on the left half of screen, align menu's left edge to button's left.
+            // If button is on the right half of screen, align menu's right edge to button's right.
+            const isLeftHalf = buttonRect.left < viewportWidth / 2;
+            const align = isLeftHalf ? 'left' : 'right';
 
-        if (openUpward) {
+            let left = isLeftHalf ? buttonRect.left : buttonRect.right;
+
+            // Boundary clamping
+            if (isLeftHalf) {
+                left = Math.max(left, 10);
+            } else {
+                left = Math.min(left, viewportWidth - 10);
+            }
+
             setMenuPosition({
-                top: buttonRect.top - containerRect.top - 10, // Position above button
-                left: buttonRect.left - containerRect.left,
+                top: openUpward
+                    ? buttonRect.top - 10
+                    : buttonRect.bottom + 10,
+                left: left,
                 maxHeight: `${maxHeight}px`,
-                openUpward: true
+                openUpward: openUpward,
+                align: align
             });
         } else {
+            // Rotated Mode: Use Container Coordinates (offset loop) and Portal to Container
+            let top = 0;
+            let left = 0;
+            let el: HTMLElement | null = buttonRef.current;
+
+            while (el && el !== containerRef.current) {
+                top += el.offsetTop;
+                left += el.offsetLeft;
+                el = el.offsetParent as HTMLElement;
+            }
+
+            const buttonWidth = buttonRef.current.offsetWidth;
+            const buttonHeight = buttonRef.current.offsetHeight;
+            const containerWidth = containerRef.current.offsetWidth;
+            const containerHeight = containerRef.current.offsetHeight;
+
+            // In rotated mode (90deg CW):
+            // Landscape Vertical Axis = Container X Axis (left in code)
+            // Landscape Horizontal Axis = Container Y Axis (top in code)
+
+            // Visual available space in landscape:
+            // Top of landscape is Container Left (x=0)
+            // Bottom of landscape is Container Right (x=H_cont)
+            const spaceToLandscapeTop = left;
+            const spaceToLandscapeBottom = containerWidth - (left + buttonWidth);
+
+            const estimatedMenuHeight = 450;
+            const actualMenuHeight = menuRef.current?.offsetHeight || estimatedMenuHeight;
+
+            const openUpward = spaceToLandscapeBottom < Math.min(actualMenuHeight, 300) && spaceToLandscapeTop > spaceToLandscapeBottom;
+            const maxHeight = openUpward
+                ? Math.min(spaceToLandscapeTop - 10, actualMenuHeight)
+                : Math.min(spaceToLandscapeBottom - 10, containerHeight * 0.7);
+
+            // Horizontal alignment (Landscape):
+            // Landscape Right = Container Top (y=0)
+            // Landscape Left = Container Bottom (y=H_cont)
+            const isLandscapeRightHalf = top < containerHeight / 2;
+            const align = isLandscapeRightHalf ? 'left' : 'right';
+
             setMenuPosition({
-                top: buttonRect.bottom - containerRect.top + 10,
-                left: buttonRect.left - containerRect.left,
+                top: top, // Fixed horizontal container coordinate
+                left: left, // Fixed vertical container coordinate
                 maxHeight: `${maxHeight}px`,
-                openUpward: false
+                openUpward: openUpward,
+                align: align
             });
         }
-    }, [containerRef]);
+    }, [containerRef, isRotated]);
+
+
 
     // Auto-close menu on scroll
     React.useEffect(() => {
@@ -131,15 +192,13 @@ export function DesktopMoreMenu({
         return () => window.removeEventListener('scroll', handleScroll);
     }, [showMoreMenu, onToggleMoreMenu]);
 
-    // Recalculate position when menu opens
     React.useEffect(() => {
         if (showMoreMenu) {
             calculateMenuPosition();
-            // Recalculate after a small delay to get actual menu height
             const timer = setTimeout(calculateMenuPosition, 50);
             return () => clearTimeout(timer);
         }
-    }, [showMoreMenu, calculateMenuPosition]);
+    }, [showMoreMenu, calculateMenuPosition, isRotated]);
 
     const handleToggle = () => {
         if (!showMoreMenu) {
@@ -151,41 +210,62 @@ export function DesktopMoreMenu({
     const MenuContent = (
         <div
             ref={menuRef}
-            className={`absolute z-[9999] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-1.5 sm:p-2 w-fit min-w-[200px] sm:min-w-[240px] animate-in fade-in zoom-in-95 duration-200 overflow-y-auto`}
+            className={`absolute z-[2147483647] bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] p-1.5 sm:p-2 w-fit ${isRotated ? 'min-w-[170px]' : 'min-w-[200px] sm:min-w-[240px]'} animate-in fade-in zoom-in-95 duration-200 overflow-y-auto`}
             style={{
-                top: menuPosition.openUpward ? 'auto' : `${menuPosition.top}px`,
-                bottom: menuPosition.openUpward ? `calc(100% - ${menuPosition.top}px + 10px)` : 'auto',
-                left: `${menuPosition.left}px`,
-                maxHeight: isFullscreen ? menuPosition.maxHeight : 'none',
+                ...(isRotated ? {
+                    // In Rotated Mode:
+                    // menuPosition.left is Container X (Landscape Vertical)
+                    // menuPosition.top is Container Y (Landscape Horizontal)
+
+                    // Vertical Anchoring (Above/Below Button)
+                    ...(menuPosition.openUpward ? {
+                        right: `calc(100% - ${menuPosition.left}px + 10px)`,
+                        left: 'auto'
+                    } : {
+                        left: `${menuPosition.left + buttonRef.current?.offsetWidth! + 10}px`,
+                        right: 'auto'
+                    }),
+
+                    // Horizontal Anchoring (Left/Right to Button)
+                    top: `${menuPosition.top}px`,
+                    transform: menuPosition.align === 'right' ? 'translateY(-100%)' : 'none',
+                } : {
+                    // Normal Mode
+                    top: `${menuPosition.top}px`,
+                    left: `${menuPosition.left}px`,
+                    transform: menuPosition.align === 'right' ? 'translateX(-100%)' : 'none',
+                }),
+                maxHeight: menuPosition.maxHeight,
             }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
         >
             {/* Copy Link Options */}
             {isProxied ? (
                 <>
                     <button
                         onClick={() => onCopyLink('original')}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 sm:gap-3 cursor-pointer"
+                        className={`w-full ${isRotated ? 'px-2 py-1.5 text-[11px]' : 'px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm'} text-left text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 group-hover:gap-3 cursor-pointer`}
                     >
-                        <Icons.Link size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <Icons.Link size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>复制原链接</span>
                     </button>
                     <button
                         onClick={() => onCopyLink('proxy')}
-                        className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 sm:gap-3 mt-1 cursor-pointer"
+                        className={`w-full ${isRotated ? 'px-2 py-1.5 text-[11px]' : 'px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm'} text-left text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 mt-0.5 cursor-pointer`}
                     >
-                        <Icons.Link size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <Icons.Link size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>复制代理链接</span>
                     </button>
                 </>
             ) : (
                 <button
                     onClick={() => onCopyLink('original')}
-                    className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 sm:gap-3 cursor-pointer"
+                    className={`w-full ${isRotated ? 'px-2 py-1.5 text-[11px]' : 'px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm'} text-left text-[var(--text-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_15%,transparent)] rounded-[var(--radius-2xl)] transition-colors flex items-center gap-2 group-hover:gap-3 cursor-pointer`}
                 >
-                    <Icons.Link size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <Icons.Link size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                     <span>复制链接</span>
                 </button>
             )}
@@ -194,9 +274,9 @@ export function DesktopMoreMenu({
             <div className="h-px bg-[var(--glass-border)] my-1.5 sm:my-2" />
 
             {/* Fullscreen Mode Selector */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                    <Icons.Settings size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'} flex items-center justify-between gap-4`}>
+                <div className={`flex items-center gap-2 text-[var(--text-color)] ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                    <Icons.Settings size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                     <span>全屏方式</span>
                 </div>
                 <div className="relative">
@@ -204,31 +284,31 @@ export function DesktopMoreMenu({
                         onClick={() => {
                             setFullscreenType(fullscreenType === 'native' ? 'window' : 'native');
                         }}
-                        className="flex items-center gap-1 sm:gap-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] text-[10px] sm:text-xs rounded-[var(--radius-2xl)] px-2 sm:px-2.5 py-1 sm:py-1.5 outline-none hover:border-[var(--accent-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_5%,transparent)] transition-all cursor-pointer whitespace-nowrap"
+                        className={`flex items-center gap-1 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] rounded-[var(--radius-2xl)] outline-none hover:border-[var(--accent-color)] hover:bg-[color-mix(in_srgb,var(--accent-color)_5%,transparent)] transition-all cursor-pointer whitespace-nowrap ${isRotated ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-xs'}`}
                     >
                         <span>{fullscreenType === 'native' ? '系统全屏' : '网页全屏'}</span>
-                        <Icons.Maximize size={12} className="text-[var(--text-color-secondary)]" />
+                        <Icons.Maximize size={isRotated ? 10 : 12} className="text-[var(--text-color-secondary)]" />
                     </button>
                 </div>
             </div>
 
             {/* Show Mode Indicator Switch */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                    <Icons.Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
-                    <span>显示模式指示器</span>
+            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'} flex items-center justify-between gap-4`}>
+                <div className={`flex items-center gap-2 text-[var(--text-color)] ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                    <Icons.Zap size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span>模式指示器</span>
                 </div>
                 <button
                     onClick={() => setShowModeIndicator(!showModeIndicator)}
-                    className={`relative w-8 h-[18px] sm:w-10 sm:h-6 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${showModeIndicator
+                    className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${showModeIndicator
                         ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
                         : 'bg-white/5 hover:bg-white/10'
-                        }`}
+                        } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
                     aria-checked={showModeIndicator}
                     role="switch"
                 >
                     <span
-                        className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${showModeIndicator ? 'translate-x-3.5 sm:translate-x-4.5' : 'translate-x-0'
+                        className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${showModeIndicator ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
                             }`}
                     />
                 </button>
@@ -275,103 +355,103 @@ export function DesktopMoreMenu({
             </div>
 
             {/* Auto Next Episode Switch */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                    <Icons.SkipForward size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'} flex items-center justify-between gap-4`}>
+                <div className={`flex items-center gap-2 text-[var(--text-color)] ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                    <Icons.SkipForward size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                     <span>自动下一集</span>
                 </div>
                 <button
                     onClick={() => setAutoNextEpisode(!autoNextEpisode)}
-                    className={`relative w-8 h-[18px] sm:w-10 sm:h-6 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoNextEpisode
+                    className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoNextEpisode
                         ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
                         : 'bg-white/5 hover:bg-white/10'
-                        }`}
+                        } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
                     aria-checked={autoNextEpisode}
                     role="switch"
                 >
                     <span
-                        className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${autoNextEpisode ? 'translate-x-3.5 sm:translate-x-4.5' : 'translate-x-0'
+                        className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoNextEpisode ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
                             }`}
                     />
                 </button>
             </div>
 
             {/* Skip Intro Switch */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5">
-                <div className="flex items-center justify-between gap-4 sm:gap-6">
-                    <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                        <Icons.FastForward size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'}`}>
+                <div className="flex items-center justify-between gap-4">
+                    <div className={`flex items-center gap-2 text-[var(--text-color)] ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                        <Icons.FastForward size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>跳过片头</span>
                     </div>
                     <button
                         onClick={() => setAutoSkipIntro(!autoSkipIntro)}
-                        className={`relative w-8 h-[18px] sm:w-10 sm:h-6 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipIntro
+                        className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipIntro
                             ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
                             : 'bg-white/5 hover:bg-white/10'
-                            }`}
+                            } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
                         aria-checked={autoSkipIntro}
                         role="switch"
                     >
                         <span
-                            className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${autoSkipIntro ? 'translate-x-3.5 sm:translate-x-4.5' : 'translate-x-0'
+                            className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoSkipIntro ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
                                 }`}
                         />
                     </button>
                 </div>
                 {/* Expandable Input */}
                 {autoSkipIntro && (
-                    <div className="mt-2 ml-6 sm:ml-7 flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-[10px] sm:text-xs text-[var(--text-color-secondary)]">时长:</span>
+                    <div className={`mt-2 flex items-center gap-1.5 ${isRotated ? 'ml-4' : 'ml-6 sm:ml-7'}`}>
+                        <span className={`text-[var(--text-color-secondary)] ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'}`}>时长:</span>
                         <input
                             type="number"
                             min="0"
                             max="600"
                             value={skipIntroSeconds}
                             onChange={(e) => setSkipIntroSeconds(parseInt(e.target.value) || 0)}
-                            className="w-12 sm:w-16 px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs sm:text-sm text-center bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] text-[var(--text-color)] focus:outline-none focus:border-[var(--accent-color)] no-spinner"
+                            className={`text-center bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] text-[var(--text-color)] focus:outline-none focus:border-[var(--accent-color)] no-spinner ${isRotated ? 'w-10 px-1 py-0 text-[10px]' : 'w-12 sm:w-16 px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs sm:text-sm'}`}
                             onClick={(e) => e.stopPropagation()}
                         />
-                        <span className="text-[10px] sm:text-xs text-[var(--text-color-secondary)]">秒</span>
+                        <span className={`text-[var(--text-color-secondary)] ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'}`}>秒</span>
                     </div>
                 )}
             </div>
 
             {/* Skip Outro Switch */}
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5">
-                <div className="flex items-center justify-between gap-4 sm:gap-6">
-                    <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[var(--text-color)]">
-                        <Icons.Rewind size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <div className={`${isRotated ? 'px-2 py-1.5' : 'px-3 py-2 sm:px-4 sm:py-2.5'}`}>
+                <div className="flex items-center justify-between gap-4">
+                    <div className={`flex items-center gap-2 text-[var(--text-color)] ${isRotated ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                        <Icons.Rewind size={isRotated ? 14 : 16} className="sm:w-[18px] sm:h-[18px]" />
                         <span>跳过片尾</span>
                     </div>
                     <button
                         onClick={() => setAutoSkipOutro(!autoSkipOutro)}
-                        className={`relative w-8 h-[18px] sm:w-10 sm:h-6 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipOutro
+                        className={`relative rounded-full transition-all duration-300 cursor-pointer flex-shrink-0 border border-white/20 ${autoSkipOutro
                             ? 'bg-[var(--accent-color)] shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.6)]'
                             : 'bg-white/5 hover:bg-white/10'
-                            }`}
+                            } ${isRotated ? 'w-6 h-3.5' : 'w-8 h-[18px] sm:w-10 sm:h-6'}`}
                         aria-checked={autoSkipOutro}
                         role="switch"
                     >
                         <span
-                            className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${autoSkipOutro ? 'translate-x-3.5 sm:translate-x-4.5' : 'translate-x-0'
+                            className={`absolute top-0.5 left-0.5 bg-white rounded-full transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.4)] ${isRotated ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5'} ${autoSkipOutro ? (isRotated ? 'translate-x-2.5' : 'translate-x-3.5 sm:translate-x-4.5') : 'translate-x-0'
                                 }`}
                         />
                     </button>
                 </div>
                 {/* Expandable Input */}
                 {autoSkipOutro && (
-                    <div className="mt-2 ml-6 sm:ml-7 flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-[10px] sm:text-xs text-[var(--text-color-secondary)]">剩余:</span>
+                    <div className={`mt-2 flex items-center gap-1.5 ${isRotated ? 'ml-4' : 'ml-6 sm:ml-7'}`}>
+                        <span className={`text-[var(--text-color-secondary)] ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'}`}>剩余:</span>
                         <input
                             type="number"
                             min="0"
                             max="600"
                             value={skipOutroSeconds}
                             onChange={(e) => setSkipOutroSeconds(parseInt(e.target.value) || 0)}
-                            className="w-12 sm:w-16 px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs sm:text-sm text-center bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] text-[var(--text-color)] focus:outline-none focus:border-[var(--accent-color)] no-spinner"
+                            className={`text-center bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] text-[var(--text-color)] focus:outline-none focus:border-[var(--accent-color)] no-spinner ${isRotated ? 'w-10 px-1 py-0 text-[10px]' : 'w-12 sm:w-16 px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs sm:text-sm'}`}
                             onClick={(e) => e.stopPropagation()}
                         />
-                        <span className="text-[10px] sm:text-xs text-[var(--text-color-secondary)]">秒</span>
+                        <span className={`text-[var(--text-color-secondary)] ${isRotated ? 'text-[9px]' : 'text-[10px] sm:text-xs'}`}>秒</span>
                     </div>
                 )}
             </div>
@@ -393,7 +473,8 @@ export function DesktopMoreMenu({
             </button>
 
             {/* More Menu Dropdown (Portal) */}
-            {showMoreMenu && typeof document !== 'undefined' && createPortal(MenuContent, containerRef.current || document.body)}
+            {/* More Menu Dropdown (Portal) */}
+            {showMoreMenu && typeof document !== 'undefined' && createPortal(MenuContent, (isRotated && containerRef.current) ? containerRef.current : document.body)}
         </div>
     );
 }
